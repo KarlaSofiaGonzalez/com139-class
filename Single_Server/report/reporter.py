@@ -22,8 +22,29 @@ def report_all_by_field_obj(my_objs: list, my_field: str, w_filter: bool = False
             print('No mode found in data')
         print('Stdev %s: %5.3f' % (my_field, get_stdev_obj(my_objs, my_field, w_filter, val)))
         print('Variance %s: %5.3f' % (my_field, get_variance_obj(my_objs, my_field, w_filter, val)))
-        # TODO: Calculate the percentage of minimal value
+
+        # TODO: Calculate the percentage of minimal value ((min*100)/max)
+        """
+        lowest = (my_field, min_time, objects_as_str(get_matching_value_obj(my_objs, my_field, min_time)))
+        highest = (my_field, max_time, objects_as_str(get_matching_value_obj(my_objs, my_field, max_time)))
+        minimal = ((lowest[1])*100)/(highest[1])
+        print('Percentage minimal value %s: %5.3f' % (my_field, minimal))
+        """
+        low = len(get_matching_value_obj(my_objs, my_field, min_time))
+        minimal = ((low *100)/len(my_objs))
+        print('Percentage minimal value %s: %5.3f' % (my_field, minimal))
+
         # TODO: Group std dev customers and display the list
+        limit_low= get_mean_obj(my_objs, my_field, w_filter, val) - get_stdev_obj(my_objs, my_field, w_filter, val) 
+        limit_high= get_mean_obj(my_objs, my_field, w_filter, val) + get_stdev_obj(my_objs, my_field, w_filter, val) 
+        number = get_map_values(my_objs, my_field)
+        cust = objects_as_str(get_matching_value_obj(my_objs, my_field, number[1]))
+        print("Group std dev customers: ")
+        for ele in range(len(my_objs)):
+            if(number[ele]>limit_low and number[ele]<limit_high):
+                print(objects_as_str(get_matching_value_obj(my_objs, my_field, number[ele])))
+
+
     else:
         print(is_status)
         values = get_map_values(my_objs, my_field)
