@@ -161,33 +161,79 @@ class Fluid:
         return self.rotx, self.roty
 
 
+
 if __name__ == "__main__":
     try:
+        import matplotlib
         import matplotlib.pyplot as plt
         from matplotlib import animation
+        from matplotlib.animation import writers
+        import json
+        from matplotlib.patches import Rectangle
 
         inst = Fluid()
 
+        f= open('data2.json', "r")
+        information = f.read()
+        conf = json.loads(information)
+      
+
         def update_im(i):
             # We add new density creators in here
-            inst.density[14:17, 14:17] += 100  # add density into a 3*3 square
+            for elementsD in conf['density']:
+                inst.density[elementsD['x0']:elementsD['x1'], elementsD['y0']:elementsD['y1']] += elementsD["amount1"]  # add density into a 3*3 square
+            #inst.density[14:17, 14:17] += 100  # add density into a 3*3 square
             # We add velocity vector values in here
-            inst.velo[20, 20] = [-2, -2]
+            for elementsV in conf['velocity']:
+                if elementsV['force'] == "linear":
+                    inst.velo[elementsV['x0'], elementsV['y0']] = [elementsV['rx0'], elementsV['ry0']]
+                elif elementsV['force'] == "rotationX":
+                    inst.velo[elementsV['x0'], elementsV['y0']] = [elementsV['rx0'], elementsV['ry0']*np.cos(.4 * i)]
+                elif elementsV['force'] == "rotationY":
+                    inst.velo[elementsV['x0'], elementsV['y0']] = [elementsV['rx0']*np.sin(.4 * i), elementsV['ry0']]
+                elif elementsV['force'] == "circular":
+                    inst.velo[elementsV['x0'], elementsV['y0']] = [elementsV['rx0']*np.sin(.4 * i), elementsV['ry0']*np.cos(.4 * i)]
+
             inst.step()
+
+            for o in conf['objects']:
+                figObj = o['figure']
+
+                if figObj == "Rectangle":
+                    x = o['x']
+                    y = o['y']
+                    w = o['w']
+                    h = o['h']
+                    inst.density[y:y+h, x:x+w] = 0
+                    inst.velo[y:y+h, x:x+w] = 0
+                elif figObj == "Square":
+                    x = o['x']
+                    y = o['y']
+                    w = o['w']
+                    inst.density[y:y+w, x:x+w] = 0
+                    inst.velo[y:y+w, x:x+w] = 0
+
             im.set_array(inst.density)
             q.set_UVC(inst.velo[:, :, 1], inst.velo[:, :, 0])
             # print(f"Density sum: {inst.density.sum()}")
             im.autoscale()
 
-        fig = plt.figure()
+        
+        for elementsC in conf['color']:    
+            colors = elementsC['fluidColor']
+            arr = elementsC['arrows']
+
+        fig, ax = plt.subplots(facecolor = "#FFFFFF")
+        ax.set_title('FLUID SIMULATION')
+    
 
         # plot density
-        im = plt.imshow(inst.density, vmax=100, interpolation='bilinear')
+        im = plt.imshow(inst.density, vmax=100, cmap=colors, interpolation='bilinear')
 
         # plot vector field
-        q = plt.quiver(inst.velo[:, :, 1], inst.velo[:, :, 0], scale=10, angles='xy')
-        anim = animation.FuncAnimation(fig, update_im, interval=0)
-        # anim.save("movie.mp4", fps=30, extra_args=['-vcodec', 'libx264'])
+        q = plt.quiver(inst.velo[:, :, 1], inst.velo[:, :, 0], scale=10, angles='xy',color=arr)
+        anim = animation.FuncAnimation(fig, update_im, interval=25, save_count=150)
+        #anim.save("data.mp4", fps=30, extra_args=['-vcodec', 'libx264'])
         plt.show()
 
     except ImportError:
@@ -206,4 +252,4 @@ if __name__ == "__main__":
             flu.step()
             video[step] = flu.density
 
-        imageio.mimsave('./video.gif', video.astype('uint8'))
+        #imageio.mimsave('./video.gif', video.astype('uint8'))
